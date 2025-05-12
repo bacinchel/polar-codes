@@ -1,22 +1,22 @@
 import numpy as np
 
 from polar_codes.polar_code import PolarCode
-from polar_codes.channels.bpsk_awgn_channel import BpskAwgnChannel
+from polar_codes.channels.bsc_channel import BscChannel  # BscChannel로 변경
 
 
 def main():
     # First, we create an instance of underlying channel
-    channel = BpskAwgnChannel(-1.0)
+    channel = BscChannel(BER=0.1)  # BscChannel 인스턴스 생성
 
     # Second, we define basic parameters of code: a codeword length and number of informational bits.
     # Then, we create an instance of code. We use construction method based on polar weights, since
     # it seems to be optimal. Also, we pass an instance of channel to the code and set length of CRC to 8 bits
     n = 8
     K = 115
-    code = PolarCode(n=n, K=K, construction_method='PW', channel=channel, CRC_len=16)
+    code = PolarCode(n=n, K=K, construction_method='BSC', channel=channel, CRC_len=16)  # construction_method='BSC'
 
     # Third, we generate informational bits
-    u_message = np.asarray([0 if np.random.random_sample() > 0.5 else 1 for _ in range(0, K)], dtype='uint8')
+    u_message = np.asarray([0 if np.random.random_sample() > 0.5 else 1 for _ in range(0, K)], dtype='int8')
     print('In message = {}'.format(u_message))
 
     # Fourth, we encode our message (apply polar transform to it)

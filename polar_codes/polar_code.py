@@ -86,6 +86,7 @@ class PolarCode:
             'PW': self._pw_construction,
             'IBEC': self._independent_bec_construction,
             'DBEC': self._dependent_bec_construction,
+            'BSC': self._bsc_construction,  # BSC 구성 방식 추가
         }
 
         self._decoding_methods = {
@@ -241,6 +242,24 @@ class PolarCode:
         # Sort all the channels in the ascending order of their Z-parameter since the lower Z-parameter is,
         # the more suitable channel is to transmit the information.
         construction = [_[0] for _ in sorted(enumerate(bhatt_z_array), key=lambda tup: tup[1])]
+        return construction
+
+    def _bsc_construction(self):
+        """
+        Implements the BSC method of polar construction. This method calculates the Bhattacharyya parameter
+        for each polarized channel based on the bit error probability of the BSC channel.
+
+        :return: An array of polarized channel indices sorted from the best to the worst for information transmission.
+        """
+        # Get the bit error probability from the channel
+        bit_error_prob = self._channel.get_ber()  # BSC 채널에서 BER 값을 가져옵니다.
+
+        # Calculate Bhattacharyya parameter for each of N polarized channels
+        bhatt_z_array = np.array([PolarCode.bhatt_z(i, self._N, init_value=bit_error_prob) for i in range(self._N)])
+
+        # Sort all the channels in ascending order of their Bhattacharyya parameter
+        # Lower Bhattacharyya parameter indicates better channels for information transmission
+        construction = [x[0] for x in sorted(enumerate(bhatt_z_array), key=lambda tup: tup[1])]
 
         return construction
 
@@ -399,9 +418,9 @@ class PolarCode:
         :param list_size:
         :return: An integer array of N decoded bits (u message, not x).
         """
-        y_message = np.array(y_message, dtype='uint8')
+        y_message = np.array(y_message, dtype='int8')
 
-        u_est = np.zeros(self._N, dtype='uint8')
+        u_est = np.zeros(self._N, dtype='int8')
 
         # The values of frozen bits are all known
         if frozen_bits is not None:
@@ -491,7 +510,7 @@ class PolarCode:
         is_calc_llr = [False] * self._N * (self._n + 1)
 
         # An array which stores values for N * (1 + log(N)) LLRs
-        llr_array = np.full(self._N * (self._n + 1), 0.0, dtype=np.longfloat)
+        llr_array = np.full(self._N * (self._n + 1), 0.0, dtype=np.longdouble)
 
         for i in range(self._N):
             # Call the function to calculate LLR for i-th out of N polarized channels
@@ -654,7 +673,7 @@ class PolarCode:
         :return: An integer array of N decoded bits (u message, not x).
         """
 
-        self._p_arr = np.zeros((self._n + 1, self._N, 2), dtype=np.longfloat)
+        self._p_arr = np.zeros((self._n + 1, self._N, 2), dtype=np.longdouble)
         self._b_arr = np.zeros((self._n + 1, self._N), dtype=np.uint8)
 
         vec_out_bit_prob = np.vectorize(self._out_bit_prob)
